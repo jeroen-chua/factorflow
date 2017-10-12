@@ -3,10 +3,10 @@ distribution has many "input" variable nodes, and a one "output" variable node.
 All variable nodes are binary-valued. Let Y be the set of input variables
 nodes, and let c(Y) indicate how many input variable nodes take value 1.
 Let z represent the output variable node. A y-or distribution is defined
-bynoisy
+by
 
-p(z=0|c(Y)=0) = (1-\epsilon)(1-\rho)^{c(Y)}
-p(z=1|c(Y)=0) = 1 - p(z=0|c(Y)=0)
+p(z=0|c(Y)=c) = (1-\epsilon)(1-\rho)^c
+p(z=1|c(Y)=c) = 1 - p(z=0|c(Y)=c)
 
 where \epsilon is the "leak" parameter and \rho is the probability of an input
 successfully turning the output on. \epsilon represents the probability the
@@ -57,7 +57,7 @@ class NoisyOrNodes(FactorNodes):
                'Must specify success parameters for making NoisyOrNodes object.'
 
         assert 'leak_prob' in nodes_params.keys(), \
-                          'No "probs" parameter found for NoisyOrNodes object.'
+                          'No "leak_prob" parameter found for NoisyOrNodes object.'
         assert nodes_params['leak_prob'] >= 0 and \
                nodes_params['leak_prob'] <= 1, \
                'Invalid value for leak_prob.'

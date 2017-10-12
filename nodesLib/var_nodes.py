@@ -20,8 +20,9 @@ class VarNodes(Nodes):
         add_unaries: Adds unary potentials to the specified variable nodes.
 
         get_beliefs: Returns the beliefs of the contained variable nodes.
-    """
 
+        condition_on: Condition on the state of a variable node.
+    """
 
     __DEFAULT_PARAMS = {'num_states': 2, \
                         'msgs_init_strat': MessageChunk.MSGS_INIT_ENUM.random}
@@ -52,6 +53,24 @@ class VarNodes(Nodes):
         self.num_states = nodes_params['num_states']
         self.message_chunks['vars'] = MessageChunk(name+'_vars', self.num_states)
         self.message_chunks['vars'].msgs_init_strat = nodes_params['msgs_init_strat']
+
+    def condition_on(self, node_ids, state):
+        """Condition on the state of given variable nodes.
+
+        Args:
+            node_ids (list): A list of the ids of the variable nodes (as
+            returned by create_nodes) that is to be conditioned on.
+
+            state: state (numbered from 0) to condition on. All given
+                   variable nodes will be condition to be in the given state.
+        """
+
+        assert state < self.num_states
+
+        for node_id in node_ids:
+            tmp = [0.0]*self.num_states
+            tmp[state] = 1.0
+            self.add_unaries([node_id], tmp)
 
     def get_msg_chunk(self):
         """ Returns the MessageChunk of variables nodes this object represents."""
@@ -117,22 +136,51 @@ class VarNodes(Nodes):
         unary_vals /= np.sum(unary_vals, axis=1, keepdims=True)
 
         #clip for numerical issues
-        unary_vals = np.clip(unary_vals,1e-12,1-1e-12)
+        unary_vals = np.clip(unary_vals, 1e-12, 1-1e-12)
         unary_vals /= np.sum(unary_vals, axis=1, keepdims=True)
 
         if 'log_unary' in self.nodes_params:
-            self.nodes_params['log_unary'] = np.concatenate((self.nodes_params['log_unary'], \
-                                                           np.log(unary_vals)), \
-                                                           axis=2)
+            (node_ids, unary_vals) = self.__merge_duplicate_unaries(node_ids, unary_vals)
+
+            if node_ids.size > 0:
+                self.nodes_params['log_unary'] = np.concatenate((self.nodes_params['log_unary'], \
+                                                                np.log(unary_vals)), \
+                                                                axis=2)
+                self.nodes_params['unary_idx'] = np.concatenate((self.nodes_params['unary_idx'], \
+                                                               node_ids), \
+                                                               axis=0)
         else:
             self.nodes_params['log_unary'] = np.log(unary_vals)
-
-        if 'unary_idx' in self.nodes_params:
-            self.nodes_params['unary_idx'] = np.concatenate((self.nodes_params['unary_idx'], \
-                                                           node_ids), \
-                                                           axis=0)
-        else:
             self.nodes_params['unary_idx'] = np.copy(node_ids)
+
+    def __merge_duplicate_unaries(self, node_ids, unary_vals):
+        # merges duplicate unaries and returns the variable nodes that are
+        # not duplicate entries (ie, that do not yet have unary potentials
+        # attached to them.).
+
+        dups = []
+        dups_val = None
+        for i in range(0, len(node_ids)):
+            node_id = node_ids[i]
+            if node_id in self.nodes_params['unary_idx']:
+                dups = np.append(dups, node_id)
+
+                if dups_val is None:
+                    dups_val = unary_vals[[i], :, :]
+                else:
+                    dups_val = np.concatenate((dups_val, unary_vals[[i], :, :]), axis=0)
+
+        if dups.size > 0:
+            log_dups_val = np.log(dups_val)
+
+            for i in dups:
+                idx = np.where(self.nodes_params['unary_idx'] == i)[0][0]
+                self.nodes_params['log_unary'][idx, :] += log_dups_val[int(i), :]
+
+        node_ids = np.delete(node_ids, dups)
+        unary_vals = np.delete(unary_vals, (dups), axis=0)
+
+        return (node_ids, unary_vals)
 
     def __include_unary(self, log_arr):
         """Adds on the effect of the (log of) unary potentials.

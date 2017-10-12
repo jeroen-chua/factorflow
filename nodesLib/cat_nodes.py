@@ -75,10 +75,12 @@ class CatNodes(FactorNodes):
         #compute message to input
         msg_from_outputs = self.get_msgs_on_edge('output')
 
-        output_ratio = (msg_from_outputs[:, [1], :] / msg_from_outputs[:, [0], :])
+        output_ratio = msg_from_outputs[:, [1], :] / msg_from_outputs[:, [0], :]
 
         weighted_out = probs*output_ratio
         msg = self.max_or_sum(weighted_out, axis=0, keepdims=True)
+
+        msg /= np.sum(msg, axis=1, keepdims=True)
 
         res['input'] = msg
         #compute message to input

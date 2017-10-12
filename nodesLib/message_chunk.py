@@ -109,6 +109,8 @@ class MessageChunk(object):
         assert self.__num_entries > 0, \
         'MessageChunk: %s is empty' %(self.name)
 
+        self.set_num_states(max(2,self.num_states))
+
         self.degree = self.degree[0:self.__num_entries]
 
         self.msgs_in = self.__alloc_message()
