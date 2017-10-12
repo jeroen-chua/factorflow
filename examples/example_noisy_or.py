@@ -1,9 +1,12 @@
 """Example of using the NoisyOrNodes class.
 """
 
+import sys
+sys.path.append("..")
+
 import numpy as np
 
-from bp_graph import BpGraph
+from graph import BpGraph
 from nodesLib import VarNodes
 from nodesLib import NoisyOrNodes
 
@@ -17,7 +20,8 @@ node_ids = -np.ones(NUM_INPUTS, dtype="int")
 
 #create NoisyOrNodes container running sum-product loopy belief propagation and
 #create a NoisyOr factor node.
-noisy_or_nodes = NoisyOrNodes(nodes_params={'leak_prob': 0.01, \
+noisy_or_nodes = NoisyOrNodes(name='noisy_nodes', \
+                              nodes_params={'leak_prob': 0.01, \
                                             'prob_success': 0.99, \
                                             'bp_algo': 'sum'})
 fact_id = noisy_or_nodes.create_nodes(1)[0]
@@ -52,3 +56,9 @@ bpg.do_message_passing()
 #get resulting beliefs
 bel_in = var_inputs.get_beliefs()
 bel_out = var_output.get_beliefs()
+
+print "input beliefs:"
+print bel_in
+
+print "output beliefs:"
+print bel_out

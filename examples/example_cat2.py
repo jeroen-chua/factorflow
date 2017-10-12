@@ -1,4 +1,5 @@
-"""Example of using the CatNodes class.
+"""Example of using the CatNodes class and condition on the state of a
+variable node.
 """
 
 import sys
@@ -40,6 +41,10 @@ for i in range(0, NUM_OUTPUTS):
 #create an input node and connect it to the categorical factor node
 tmp_id = var_input.create_nodes(1)
 bpg.add_edge(var_input, tmp_id[0], cat_nodes, fact_id, 'input')
+#var_input.add_unaries(tmp_id, [0, 0, 1])
+
+#condition on the state of an output node
+var_outputs.condition_on([4], 1)
 
 # schedule nodes for message-passing in graph object
 bpg.add_nodes_to_schedule(var_input)

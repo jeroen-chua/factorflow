@@ -8,21 +8,40 @@ import numpy as np
 from skimage import color
 import scipy as sp
 import pylab
-from bp_graph import BpGraph
+from graph import BpGraph
 from nodesLib import VarNodes
 from nodesLib import PottsNodes
-import utils
+import matplotlib.pyplot as plt
+
+def imshow_gray(image, rescale=False):
+    """ Displays an image in gray-scale.
+
+    Args:
+        image (ndarray): a 2D array representing the image
+
+        rescale (boolean, optional): rescale the image so entries are in the
+            range [0,1].
+    """
+    if not rescale:
+        assert np.max(image) <= 1, 'max value must be <= 1'
+        assert np.min(image) >= 0, 'max value must be >= 0'
+        plt.imshow(image, cmap=plt.get_cmap('gray'), vmin=0, vmax=1, interpolation='None')
+    else:
+        plt.imshow(image, cmap=plt.get_cmap('gray'), interpolation='None')
+
+    plt.draw()
+    plt.pause(0.001)
 
 # model parameters
-POTTS_ALPHA = 1e-3
-NUM_STATES = 256
+POTTS_ALPHA = 1e-5
+NUM_STATES = 256 #number of gray-level values we consider
 
 #load in an image
 image = sp.misc.imread("noisy.png")
 image = image.astype("float")/float(NUM_STATES-1)
 
 #crop image
-image = image[20:28, 20:28]
+image = image[20:40, 20:40]
 IM_SZ = image.shape[0:2]
 SIG2 = 1.0/float(NUM_STATES)
 
@@ -39,7 +58,7 @@ obs_vals = np.exp(obs_dist-sp.misc.logsumexp(obs_dist, 2, keepdims=True))
 obs_vals = np.reshape(obs_vals, [obs_vals.shape[0]*obs_vals.shape[1], obs_vals.shape[2]])
 
 #create the factor graph object
-bpg = BpGraph()
+bpg = BpGraph(bp_params={'damp': 0.25})
 
 #create a container for variable nodes.
 var_nodes = VarNodes('var', {'num_states': NUM_STATES})
@@ -84,7 +103,7 @@ val = np.reshape(val, IM_SZ)
 val = val.astype('float')/(NUM_STATES-1)
 
 pylab.subplot(1, 2, 1)
-utils.imshow_gray(image)
+imshow_gray(image)
 
 pylab.subplot(1, 2, 2)
-utils.imshow_gray(val, False)
+imshow_gray(val, False)
